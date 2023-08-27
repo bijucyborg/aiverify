@@ -1,0 +1,39 @@
+# The manifest for the "db" service.
+# Read the full specification for the "Backend Service" type at:
+#  https://aws.github.io/copilot-cli/docs/manifest/backend-service/
+
+# Your service name will be used in naming your resources like log groups, ECS services, etc.
+name: db
+type: Backend Service
+
+# Your service does not allow any traffic.
+
+# Configuration for your containers and service.
+image:
+  # Docker build arguments. For additional overrides: https://aws.github.io/copilot-cli/docs/manifest/backend-service/#image-build
+  build: 
+    dockerfile: ./Dockerfile.db
+    context: ./aiverify/setup-aiverify/aiverify-user
+  healthcheck:
+    command: ["CMD-SHELL", "echo 'db.runCommand({serverStatus:1}).ok' | mongosh admin -u $MONGO_INITDB_ROOT_USERNAME -p $MONGO_INITDB_ROOT_PASSWORD --quiet | grep 1 || exit 1"]
+    interval: 10s
+    retries: 2
+    timeout: 5s
+    start_period: 0s
+  port: 27017
+
+cpu: 1024       # Number of CPU units for the task.
+memory: 2048    # Amount of memory in MiB used by the task.
+count: 
+  spot: 1       # Number of tasks that should be running in your service.
+exec: true     # Enable running commands in your container.
+network:
+  connect: true # Enable Service Connect for intra-environment traffic between services.
+
+storage:
+  volumes:
+    appverifydata:
+      path: /data/db
+      read_only: false
+      efs:
+        id: fs-051672aaca6f8e0ae
